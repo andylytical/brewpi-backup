@@ -1,17 +1,19 @@
 # brewpi-backup
 Backup brewlog history from brewpi and create graphs for offline viewing.
 
-NOTES:
-
-1. Assume logged in as user `pi` with default home at `/home/pi` and default brewpi
-   webdir at `/var/www/html`.
-1. Tested on Raspbery Pi 3 running `Raspbian GNU/Linux 8 (jessie)`
-
 # Dependencies
 * Dropbox account
 
 # Installation
-1. Create a Dropbox app in the 
+
+NOTES:
+1. Assume logged in as user `pi` with default home at `/home/pi` and default brewpi
+   webdir at `/var/www/html`.
+1. Tested on Raspbery Pi 3 running `Raspbian GNU/Linux 8 (jessie)`
+
+----
+
+1. Create a Dropbox app
    1. Go to https://www.dropbox.com/developers/apps
    1. Click `Create app`
    1. Choose an API: *Dropbox API*
@@ -44,7 +46,7 @@ python3 /home/pi/brewpi-backups/sync.py
 # Automation
 1. Create a cron job for running each command above
    1. `crontab -e`
-   1. `01 */4 * * * python3 /home/pi/brewpi-backup/mk_brewlog_graphs.py`
-   1. `12 */4 * * * python3 /home/pi/brewpi-backups/sync.py`
+      1. `01 */4 * * * python3 /home/pi/brewpi-backup/mk_brewlog_graphs.py`
+      1. `12 */4 * * * python3 /home/pi/brewpi-backups/sync.py`
 
 

@@ -2,7 +2,7 @@
 
 WWW=/var/www/html
 PRGDIR=$(dirname $0)
-PYTHON_PKGS=( textwrap dropbox )
+PYTHON_PKGS=( dropbox )
 
 #fn="$PRGDIR/bash.common"
 #[[ -r $fn ]] || { echo "Cant access file '$fn'"; exit 1
@@ -26,3 +26,6 @@ for x in css js; do
     sudo rsync -ivptgo "$fn_src" "$fn_tgt"
     set +x
 done
+
+# Enable user 'pi' to write to html/data area
+sudo usermod -a -G www-data pi

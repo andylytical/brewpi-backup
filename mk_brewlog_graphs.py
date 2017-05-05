@@ -16,7 +16,7 @@ COLS_REGEX = re.compile( 'Time|Temp|Set|SG' )
 
 HOME = pathlib.Path( os.environ['HOME'] )
 DATADIR = pathlib.Path( '/var/www/html/data' )
-HTML_TEMPLATE = HOME/'brewpi-scripts/backup/brewlog.html.tmpl'
+HTML_TEMPLATE = HOME/'brewpi-backup/brewlog.html.tmpl'
 
 
 class myTemplate( string.Template ):

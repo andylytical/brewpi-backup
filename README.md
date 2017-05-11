@@ -9,6 +9,8 @@ Backup brewlog history from brewpi and create graphs for offline viewing.
 1. Assume logged in as user `pi` with default home at `/home/pi` and default brewpi
    webdir at `/var/www/html`.
 1. Tested on Raspbery Pi 3 running `Raspbian (jessie) LITE`
+1. Per-Day Fermentation Rate requires a Tilt Hydrometer. Backup HTML files *should* still work fine
+   but the fermentation rates will be empty.
 
 # Installation
 

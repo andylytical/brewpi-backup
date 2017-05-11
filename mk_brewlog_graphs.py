@@ -9,6 +9,7 @@ import urllib
 import pprint
 import os
 import textwrap
+import math
 
 # Only grab data for columns matching this regular expression
 COLS_REGEX = re.compile( 'Time|Temp|Set|SG' )
@@ -224,6 +225,75 @@ def mk_dygraph( data ):
         jscode( ');' ) )
 
 
+def sg2plato( SG ):
+    cube = 135.997 * SG * SG * SG
+    square = 630.272 * SG * SG
+    single = 1111.14 * SG
+    scalar = 616.868
+    return cube - square + single - scalar
+
+
+def calc_fermentation_rate( jsondata ):
+    ''' Create table of fermentation data
+        INPUT: jsondata - dict with format:
+                          { 'labels': [ ... ],
+                            'values': [ [...], [...], ... ],
+                          }
+        OUTPUT: dict with format:
+            { 'labels': [ ... ],
+              'values': [ [...], [...], ... ], ]
+            }
+            WHERE labels is a list of headers
+            AND   values is a list of lists wherein each sublist has values matching
+                  the headers given in labels
+    '''
+    pprint.pprint( jsondata[ 'labels' ] )
+    time_col = 0 #time is always the first column
+    regx = re.compile( 'SG' )
+    col_nums = [ k for k,v in enumerate( jsondata[ 'labels' ] ) if regx.search( v ) ]
+    col_names = [ jsondata[ 'labels' ][ i ] for i in col_nums ]
+    gravity_data = {}
+    for row in jsondata[ 'values' ]:
+        rawtime = row[ time_col ] #looks like "new Date(2017,3,29,18,59,42)"
+        cleantime = str( rawtime )[9:-1]
+        parts = cleantime.split( ',' )
+        thetime = datetime.date( *( map( int, parts[0:3] ) ) )
+        if thetime not in gravity_data:
+            gravity_data[ thetime ] = dict( zip( col_names, [[]] * len( col_nums ) ) )
+        for col in col_nums:
+            colname = jsondata[ 'labels' ][ col ]
+            gravity_data[ thetime ][ colname ].append( row[ col ] )
+    hdrs = [ jsondata[ 'labels' ][ time_col ] ]
+    for name in col_names:
+        for unit in [ 'SG', 'Plato' ]:
+            hdrs.extend( [ '{} {}'.format( name, unit ) ] )
+    output_rows = []
+    for date in sorted( gravity_data.keys() ):
+        for hdr in gravity_data[date].keys():
+            vals = gravity_data[date][hdr]
+            vmax = max( vals )
+            vmin = min( vals )
+            diff = vmax - vmin
+            plato = sg2plato( 1.0 + diff )
+            output_rows.append( [ date.strftime( '%d-%b' ), 
+                                  '{:1.4f}'.format( diff ), 
+                                  '{:1.2f}'.format( plato ) ] )
+    return { 'labels': hdrs, 'values': output_rows }
+
+
+def dict2html_table( data ):
+    table_hdrs = [ '<th>{}</th>'.format( h ) for h in data[ 'labels' ] ]
+    table_rows = []
+    for row in data[ 'values' ]:
+        cells = [ '<td>{}</td>'.format( v ) for v in row ]
+        table_rows.append( ''.join( cells ) )
+    html_parts = [ '<table>' ]
+    html_parts.append( '<tr>{}</tr>'.format( ''.join( table_hdrs ) ) )
+    html_parts.extend( [ '<tr>{}</tr>'.format( row ) for row in table_rows ] )
+    html_parts.append( '</table>' )
+    return "\n".join( html_parts )
+
+
 def mk_html( template_data, outfile ):
     with HTML_TEMPLATE.open() as infile:
         doc = infile.read()
@@ -248,15 +318,16 @@ def run():
             # No new changes to json data, dont create new html file
             print( 'No changes, skipping' )
             continue
-        # convert python types to javascript where needed
-        combined_json = py2js( combined_json )
+        f_rate = calc_fermentation_rate( combined_json )
+        f_rate_html = dict2html_table( f_rate )
         lcdparts = mk_lcdparts( beername )
         template_data = { 'BEERNAME': beername,
                           'LCD0': lcdparts[0],
                           'LCD1': lcdparts[1],
                           'LCD2': lcdparts[2],
                           'LCD3': lcdparts[3],
-                          'BEERCHART': mk_dygraph( combined_json ),
+                          'BEERCHART': mk_dygraph( py2js( combined_json ) ),
+                          'FERMENTATION_RATE': f_rate_html,
                         }
         mk_html( template_data, outfn )
 

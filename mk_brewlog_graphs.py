@@ -255,8 +255,12 @@ def calc_fermentation_rate( jsondata ):
     gravity_data = {}
     for row in jsondata[ 'values' ]:
         rawtime = row[ time_col ] #looks like "new Date(2017,3,29,18,59,42)"
+#        pprint.pprint( rawtime )
         cleantime = str( rawtime )[9:-1]
         parts = cleantime.split( ',' )
+#        pprint.pprint( parts )
+        # javascript months are 0-based, python months are 1-based
+        parts[1] = int( parts[1] ) + 1
         thetime = datetime.date( *( map( int, parts[0:3] ) ) )
         if thetime not in gravity_data:
             gravity_data[ thetime ] = dict( zip( col_names, [[]] * len( col_nums ) ) )
@@ -270,10 +274,14 @@ def calc_fermentation_rate( jsondata ):
     output_rows = []
     for date in sorted( gravity_data.keys() ):
         for hdr in gravity_data[date].keys():
-            vals = gravity_data[date][hdr]
-            vmax = max( vals )
-            vmin = min( vals )
+            vals = [ x for x in gravity_data[date][hdr] if x ]
+#            print( 'DATE:{} HDR:{} NUMVALS:{}'.format( date, hdr, len( vals ) ) )
+#            pprint.pprint( vals )
+            vmax = max( vals, default=0 )
+            vmin = min( vals, default=0 )
             diff = vmax - vmin
+            if vmax==0 or vmin==0:
+                diff = 0
             plato = sg2plato( 1.0 + diff )
             output_rows.append( [ date.strftime( '%d-%b' ), 
                                   '{:1.4f}'.format( diff ), 
